@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CatCare API</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --purple: #6f42c1; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .navbar { background: white; border-bottom: 1px solid #eee; }
+        .navbar-brand { color: var(--purple) !important; font-weight: 800; display: flex; align-items: center; }
+        .cat-paw { width: 30px; height: 30px; margin-right: 10px; fill: var(--purple); }
+        .stat-card { border: none; border-radius: 20px; background: white; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; }
+        .stat-value { font-size: 2.8rem; font-weight: 800; color: var(--purple); }
+        .badge-status { border-radius: 20px; padding: 5px 15px; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+        .status-agendado { background: #fff3cd; color: #856404; }
+        .status-andamento { background: #cce5ff; color: #004085; }
+        .status-concluido { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar sticky-top p-3">
+    <div class="container d-flex justify-content-between">
+        <a class="navbar-brand" href="#">
+            <svg class="cat-paw" viewBox="0 0 24 24"><path d="M8.5,5C7.67,5 7,5.67 7,6.5C7,7.33 7.67,8 8.5,8C9.33,8 10,7.33 10,6.5C10,5.67 9.33,5 8.5,5M12,2C10.9,2 10,2.9 10,4C10,5.1 10.9,6 12,6C13.1,6 14,5.1 14,4C14,2.9 13.1,2 12,2M15.5,5C14.67,5 14,5.67 14,6.5C14,7.33 14.67,8 15.5,8C16.33,8 17,7.33 17,6.5C17,5.67 16.33,5 15.5,5M12,10C9,10 6,12.5 6,16C6,18.5 7.5,21 10,21H14C16.5,21 18,18.5 18,16C18,12.5 15,10 12,10Z"/></svg>
+            CatCare
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-light rounded-circle" type="button" data-bs-toggle="dropdown">⋮</button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                <li><a class="dropdown-item" onclick="switchView('appointments')">Agendamentos</a></li>
+                <li><a class="dropdown-item" onclick="switchView('cats')">Animais</a></li>
+                <li><a class="dropdown-item" onclick="switchView('tutors')">Tutores</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row g-4 mb-5">
+        <div class="col-md-6"><div class="stat-card"><div class="small fw-bold text-muted">AGENDAMENTOS TOTAIS</div><div class="stat-value" id="countAppointments">0</div></div></div>
+        <div class="col-md-6"><div class="stat-card"><div class="small fw-bold text-muted">ANIMAIS CADASTRADOS</div><div class="stat-value" id="countCats">0</div></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="card p-4 border-0 shadow-sm">
+                <button class="btn btn-outline-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalTutor">+ Novo Tutor</button>
+                <button class="btn btn-outline-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalGato" onclick="loadTutors()">+ Novo Gato</button>
+                <button class="btn btn-primary w-100 mb-4" style="background:#6f42c1" data-bs-toggle="modal" data-bs-target="#modalAgendamento" onclick="loadCats()">+ Novo Agendamento</button>
+                <button class="btn btn-light btn-sm w-100" onclick="initDashboard()">🔄 Sincronizar</button>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card p-4 border-0 shadow-sm">
+                <h4 id="viewTitle" class="fw-bold mb-4 text-dark">Agenda de Consultas e Exames</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead id="tableHeader" class="table-light"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgendamento" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header border-0"><h5>Agendar</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><form id="formAgendamento">
+    <select id="sel_gato" class="form-select mb-3" required><option value="">Selecione o Gato...</option></select>
+    <input type="datetime-local" id="a_data" class="form-control mb-3" required>
+    <select id="a_status" class="form-select mb-3">
+        <option value="agendado">Agendado</option>
+        <option value="em andamento">Em Andamento</option>
+        <option value="concluido">Concluído</option>
+    </select>
+    <textarea id="a_desc" class="form-control mb-3" placeholder="Motivo"></textarea>
+    <button type="submit" class="btn btn-primary w-100" style="background:#6f42c1">Confirmar</button>
+</form></div></div></div></div>
+
+<div class="modal fade" id="modalTutor" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-body"><form id="formTutor"><input type="text" id="t_nome" class="form-control mb-3" placeholder="Nome" required><input type="email" id="t_email" class="form-control mb-3" placeholder="E-mail" required><button type="submit" class="btn btn-primary w-100">Salvar</button></form></div></div></div></div>
+<div class="modal fade" id="modalGato" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-body"><form id="formGato"><select id="sel_tutor" class="form-select mb-3"></select><input type="text" id="g_nome" class="form-control mb-3" placeholder="Nome Gato"><input type="text" id="g_raca" class="form-control mb-3" placeholder="Raça"><input type="number" id="g_idade" class="form-control mb-3" placeholder="Idade"><button type="submit" class="btn btn-primary w-100">Salvar</button></form></div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API = 'http://localhost:3000';
+    let currentView = 'appointments';
+
+    // FUNÇÕES DE CARGA PARA SELECTS (Busca nomes reais para os formulários)
+    async function loadTutors() {
+        const res = await fetch(`${API}/tutors`); 
+        const data = await res.json();
+        document.getElementById('sel_tutor').innerHTML = '<option value="">Selecione o Dono...</option>' + 
+            data.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+    }
+
+    async function loadCats() {
+        const res = await fetch(`${API}/cats`); 
+        const data = await res.json();
+        document.getElementById('sel_gato').innerHTML = '<option value="">Selecione o Gato...</option>' + 
+            data.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+    }
+
+    // SINCRONIZA CONTADORES E TOTAIS NO TOPO
+    async function initDashboard() {
+        try {
+            const [resA, resC] = await Promise.all([
+                fetch(`${API}/appointments`), 
+                fetch(`${API}/cats`)
+            ]);
+            const apps = await resA.json(); 
+            const cats = await resC.json();
+            
+            // Atualiza os números na tela inicial
+            document.getElementById('countAppointments').innerText = Array.isArray(apps) ? apps.length : 0;
+            document.getElementById('countCats').innerText = Array.isArray(cats) ? cats.length : 0;
+            
+            switchView(currentView);
+        } catch (err) { console.error("Erro na API:", err); }
+    }
+
+    // GESTÃO DE LISTAGENS (Agendamentos, Gatos ou Tutores)
+    async function switchView(view) {
+        currentView = view;
+        const head = document.getElementById('tableHeader'); 
+        const body = document.getElementById('tableBody');
+        const title = document.getElementById('viewTitle');
+
+        body.innerHTML = '<tr><td colspan="6" class="text-center p-4">Carregando...</td></tr>';
+
+        if (view === 'appointments') {
+    title.innerText = "Agenda de Consultas e Exames";
+    // Adicionamos a coluna "Tutor" no cabeçalho
+    head.innerHTML = "<tr><th>ID</th><th>Gato</th><th>Tutor</th><th>Data</th><th>Motivo</th><th>Status</th><th class='text-end'>Ações</th></tr>";
+    
+    const res = await fetch(`${API}/appointments`); 
+    const data = await res.json();
+    
+    body.innerHTML = data.map(a => `
+        <tr>
+            <td>${a.id}</td>
+            <td><strong>${a.nome_gato || '---'}</strong></td>
+            <td>${a.nome_tutor || '---'}</td> <td>${a.data_consulta ? new Date(a.data_consulta).toLocaleString('pt-BR') : '---'}</td>
+            <td><small>${a.descricao || '-'}</small></td>
+            <td><span class="badge-status status-${(a.status || 'agendado').replace(' ', '-')}">${a.status || 'agendado'}</span></td>
+            <td class="text-end"><button class="btn btn-sm btn-outline-danger border-0" onclick="cancelApp(${a.id})">🗑</button></td>
+        </tr>`).join('');
+        } else if (view === 'cats') {
+            title.innerText = "Animais Cadastrados";
+            head.innerHTML = "<tr><th>ID</th><th>Nome</th><th>Raça</th><th>Idade</th></tr>";
+            const res = await fetch(`${API}/cats`); 
+            const data = await res.json();
+            body.innerHTML = data.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td><strong>${c.nome}</strong></td>
+                    <td>${c.raca || '-'}</td>
+                    <td>${c.idade || 0} anos</td>
+                </tr>`).join('');
+        } else if (view === 'tutors') {
+            title.innerText = "Tutores Cadastrados";
+            head.innerHTML = "<tr><th>ID</th><th>Nome</th><th>E-mail</th></tr>";
+            const res = await fetch(`${API}/tutors`); 
+            const data = await res.json();
+            body.innerHTML = data.map(t => `
+                <tr>
+                    <td>${t.id}</td>
+                    <td><strong>${t.nome}</strong></td>
+                    <td>${t.email || 'Não informado'}</td>
+                </tr>`).join('');
+        }
+    }
+
+    // INTERATIVIDADE DOS BOTÕES (POST)
+    document.getElementById('formTutor').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = { 
+            nome: document.getElementById('t_nome').value, 
+            email: document.getElementById('t_email').value 
+        };
+        await fetch(`${API}/tutors`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+        bootstrap.Modal.getInstance(document.getElementById('modalTutor')).hide();
+        document.getElementById('formTutor').reset();
+        initDashboard();
+    };
+
+    document.getElementById('formGato').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = { 
+            tutor_id: document.getElementById('sel_tutor').value, 
+            nome: document.getElementById('g_nome').value, 
+            raca: document.getElementById('g_raca').value, 
+            idade: document.getElementById('g_idade').value 
+        };
+        await fetch(`${API}/cats`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+        bootstrap.Modal.getInstance(document.getElementById('modalGato')).hide();
+        document.getElementById('formGato').reset();
+        initDashboard();
+    };
+
+    document.getElementById('formAgendamento').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = { 
+            cat_id: document.getElementById('sel_gato').value, 
+            data_consulta: document.getElementById('a_data').value, 
+            status: document.getElementById('a_status').value, 
+            descricao: document.getElementById('a_desc').value 
+        };
+        const res = await fetch(`${API}/appointments`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+        if(res.ok) { 
+            bootstrap.Modal.getInstance(document.getElementById('modalAgendamento')).hide(); 
+            document.getElementById('formAgendamento').reset();
+            initDashboard(); 
+        } else { alert("Erro ao agendar."); }
+    };
+
+    async function cancelApp(id) { 
+        if(confirm("Deseja cancelar este agendamento?")) { 
+            await fetch(`${API}/appointments/${id}`, { method: 'DELETE' }); 
+            initDashboard(); 
+        } 
+    }
+
+    // Inicialização automática
+    window.onload = initDashboard;
+</script>
+</body>
+</html>

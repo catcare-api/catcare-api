@@ -4,19 +4,14 @@ const pool = require("../db/connection");
 
 // criar tutor
 router.post("/", async (req, res) => {
-  try {
-    const { nome, telefone } = req.body;
-
-    const result = await pool.query(
-      "INSERT INTO tutors (nome, telefone) VALUES ($1, $2) RETURNING *",
-      [nome, telefone]
-    );
-
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao criar tutor" });
-  }
+    const { nome, email, telefone } = req.body; // O email precisa estar aqui!
+    try {
+        const query = "INSERT INTO tutors (nome, email, telefone) VALUES ($1, $2, $3) RETURNING *";
+        const result = await pool.query(query, [nome, email, telefone]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // listar tutores

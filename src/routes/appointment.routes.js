@@ -2,16 +2,25 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db/connection");
 
-// Criar agendamento
+// Criar agendamento (O NOVO COM VALIDAÇÃO DE DATA)
 router.post("/", async (req, res) => {
   try {
-    // Pegando os nomes corretos do corpo da requisição (Insomnia)
     const { cat_id, data_consulta, descricao } = req.body;
 
-    // Verificação básica
     if (!cat_id || !data_consulta) {
       return res.status(400).json({ error: "cat_id e data_consulta são obrigatórios" });
     }
+
+    // --- AQUI ESTÁ A MUDANÇA: VALIDAÇÃO ---
+    const dataAgendamento = new Date(data_consulta);
+    const agora = new Date();
+
+    if (dataAgendamento < agora) {
+      return res.status(400).json({ 
+        error: "Não é possível agendar uma consulta para uma data que já passou." 
+      });
+    }
+    // ---------------------------------------
 
     const result = await pool.query(
       `INSERT INTO appointments (cat_id, data_consulta, descricao)
@@ -30,24 +39,29 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Listar agendamentos com nomes dos gatos
+// Buscar agendamentos pelo nome do gato (Busca Inteligente)
+// Localize sua rota GET e substitua a query por esta:
 router.get("/", async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        a.id, a.data_consulta, a.descricao, a.status,
-        c.nome AS nome_gato
-      FROM appointments a
-      INNER JOIN cats c ON a.cat_id = c.id
-      ORDER BY a.data_consulta ASC
-    `;
-    const result = await pool.query(query);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    try {
+        const query = `
+            SELECT 
+                a.id, 
+                c.nome AS nome_gato, 
+                t.nome AS nome_tutor, 
+                a.data_consulta, 
+                a.descricao, 
+                a.status
+            FROM appointments a
+            JOIN cats c ON a.cat_id = c.id
+            JOIN tutors t ON c.tutor_id = t.id
+            ORDER BY a.data_consulta DESC
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
-
 
 // Atualizar agendamento
 router.put("/:id", async (req, res) => {
