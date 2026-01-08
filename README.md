@@ -12,7 +12,6 @@ Tecnologias
 Como rodar o projeto
 
 ^ Usando Docker
-```bash
 docker-compose up
 
 API DISPONIVEL EM:
@@ -33,21 +32,3 @@ GET /cats → lista gatos
 POST /appointments → cria atendimento
 
 GET /appointments → lista atendimentos
-
-
-## Estrutura do projeto
-
-catcare-api/
-├── src/
-│   ├── db/
-│   │   └── connection.js
-│   ├── routes/
-│   │   ├── tutor.routes.js
-│   │   ├── cat.routes.js
-│   │   └── appointment.routes.js
-│   └── index.js
-├── Dockerfile
-├── docker-compose.yml
-├── .env
-├── .gitignore
-└── README.md
