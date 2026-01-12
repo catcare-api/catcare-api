@@ -107,4 +107,29 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Buscar agendamentos de um GATO específico pelo ID dele
+// Rota: GET /appointments/search/:id
+router.get("/search/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // --- ADICIONE ISSO AQUI ---
+    console.log("!!! ESTOU RODANDO O ARQUIVO CERTO !!! ID:", id);
+    // ---------------------------
+
+    const result = await pool.query(
+      `SELECT a.*, c.nome as nome_gato 
+       FROM appointments a
+       JOIN cats c ON a.cat_id = c.id
+       WHERE a.cat_id = $1`, // <--- Confirme que o $1 está aqui
+      [id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error); // Isso ajuda a ver o erro no terminal
+    res.status(500).json({ error: error.message });
+  }
+});
 module.exports = router;
