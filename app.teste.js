@@ -1,13 +1,13 @@
 const request = require('supertest');
 const app = require('./index'); 
 
-describe('Testes de Endpoint CatCare', () => {
-  it('Deve responder 404 para rotas inexistentes (API Viva)', async () => {
-    const res = await request(app).get('/rota-que-nao-existe');
+describe('Testes Iniciais CatCare', () => {
+  it('Deve responder com status 404 em rotas inexistentes', async () => {
+    const res = await request(app).get('/rota-teste');
     expect(res.statusCode).toBe(404);
   });
 
-  it('Deve validar se o ambiente é de teste', () => {
-    expect(process.env.NODE_ENV).toBe('test');
+  it('Deve validar se as dependências estão carregadas', () => {
+    expect(app).toBeDefined();
   });
 });

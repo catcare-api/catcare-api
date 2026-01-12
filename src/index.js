@@ -17,9 +17,8 @@ app.use("/cats", catRoutes);
 app.use("/appointments", appointmentRoutes);
 
 if (process.env.NODE_ENV !== 'test') {
-  const PORT = 3000;
-  app.listen(PORT, () => {
-    console.log(`🐱 CatCare API rodando na porta ${PORT}`);
+  app.listen(3000, () => {
+    console.log("🐱 CatCare API rodando na porta 3000");
   });
 }
 
