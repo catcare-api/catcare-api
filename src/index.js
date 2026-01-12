@@ -19,3 +19,5 @@ app.use("/appointments", appointmentRoutes);
 app.listen(3000, () => {
   console.log("🐱 CatCare API rodando na porta 3000");
 });
+
+module.exports = app;
