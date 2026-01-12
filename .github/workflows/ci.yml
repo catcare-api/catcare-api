@@ -22,11 +22,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          -v ${{ github.workspace }}/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
 
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
+
+      - name: Verificar estrutura de arquivos
+        run: ls -R
+
+      - name: Inicializar Banco de Dados
+        run: |
+          docker exec ${{ job.services.postgres.id }} psql -U user_test -d catcare_test -f docker/init.sql
+        env:
+          PGPASSWORD: password_test
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,9 +48,8 @@ jobs:
       - name: Executar Testes de Integração
         env:
           NODE_ENV: test
+          DB_HOST: localhost
           DB_USER: user_test
           DB_PASSWORD: password_test
-          DB_HOST: localhost
-          DB_PORT: 5432
           DB_NAME: catcare_test
         run: npm test
