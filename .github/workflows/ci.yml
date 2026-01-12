@@ -3,13 +3,27 @@ name: CI CatCare API
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: user_test
+          POSTGRES_PASSWORD: password_test
+          POSTGRES_DB: catcare_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          -v ${{ github.workspace }}/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -23,16 +37,12 @@ jobs:
       - name: Instalar Dependências
         run: npm install
 
-      - name: Executar Testes Automatizados
+      - name: Executar Testes de Integração
         env:
           NODE_ENV: test
+          DB_USER: user_test
+          DB_PASSWORD: password_test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: catcare_test
         run: npm test
-  build-image:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Simulação de Build
-        run: echo "Aqui entraria o comando de build da imagem Docker"

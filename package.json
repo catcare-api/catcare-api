@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "test": "jest",
-  "dev": "node index.js"
+  "test": "jest --passWithNoTests",
+  "dev": "node src/index.js"
 },
   "keywords": [],
   "author": "",

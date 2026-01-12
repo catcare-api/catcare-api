@@ -1,13 +1,35 @@
 const request = require('supertest');
 const app = require('./index'); 
+const pool = require('./db/connection');
 
-describe('Testes Iniciais CatCare', () => {
-  it('Deve responder com status 404 em rotas inexistentes', async () => {
-    const res = await request(app).get('/rota-teste');
-    expect(res.statusCode).toBe(404);
+describe('Testes de Integração com Banco Real', () => {
+  
+  afterAll(async () => {
+    await pool.end(); 
   });
 
-  it('Deve validar se as dependências estão carregadas', () => {
-    expect(app).toBeDefined();
+  it('Deve criar um tutor seguindo o esquema do init.sql', async () => {
+    const res = await request(app)
+      .post('/tutors')
+      .send({
+        nome: "Maria Oliveira",
+        email: "maria@teste.com",
+        telefone: "88912345678"
+      });
+    
+    expect(res.statusCode).toBe(201);
+    expect(res.body.nome).toBe("Maria Oliveira");
+  });
+
+  it('Deve falhar ao tentar criar um agendamento para um gato inexistente (FK Check)', async () => {
+    const res = await request(app)
+      .post('/appointments')
+      .send({
+        cat_id: 9999, 
+        data_consulta: new Date(),
+        descricao: "Consulta de rotina"
+      });
+    
+    expect(res.statusCode).toBeGreaterThanOrEqual(400);
   });
 });
