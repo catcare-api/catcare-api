@@ -1,8 +1,10 @@
-name: CI CatCare API
+name: CI - CatCare API
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
 
 jobs:
   test:
@@ -12,44 +14,58 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: user_test
-          POSTGRES_PASSWORD: password_test
-          POSTGRES_DB: catcare_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: catcare_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d catcare_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     steps:
-      - name: Checkout código
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Verificar estrutura de arquivos
-        run: ls -R
-
-      - name: Inicializar Banco de Dados
-        run: |
-          docker exec ${{ job.services.postgres.id }} psql -U user_test -d catcare_test -f docker/init.sql
-        env:
-          PGPASSWORD: password_test
-
-      - name: Setup Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
 
-      - name: Instalar Dependências
+      - name: Criar arquivo .env para testes
+        run: |
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASSWORD=postgres" >> .env
+          echo "DB_NAME=catcare_db" >> .env
+
+      - name: Instalar dependências
         run: npm install
 
-      - name: Executar Testes de Integração
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_USER: user_test
-          DB_PASSWORD: password_test
-          DB_NAME: catcare_test
+      - name: Definir ambiente de teste
+        run: echo "NODE_ENV=test" >> $GITHUB_ENV
+
+      - name: Criar tabelas no banco (init.sql)
+        run: |
+          PGPASSWORD=postgres psql \
+          -h localhost \
+          -U postgres \
+          -d catcare_db \
+          -f docker/init.sql
+
+      - name: Executar testes de integração
         run: npm test
+
+  build-docker:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Build da imagem Docker
+        run: docker build -t catcare-api:latest .
