@@ -11,6 +11,13 @@ const appointmentRoutes = require("./routes/appointment.routes");
 
 app.use(cors()); // Libera o acesso para o seu index.html
 app.use(express.json());
+//servir arquivos estáticos do diretório 'docker' (index.html, etc.)
+app.use(express.static('docker'));
+
+//servir a página inicial na rota raiz
+app.get('/', (req, res) => {
+  res.sendFile(require('path').join(__dirname, '..', 'docker', 'index.html'));
+});
 
 app.use("/tutors", tutorRoutes);
 app.use("/cats", catRoutes);
