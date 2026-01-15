@@ -37,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_USERNAME }}/catcare-api
+          images: kendriks2/catcare-api
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
