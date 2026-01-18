@@ -41,6 +41,7 @@ jobs:
           echo "DB_USER=postgres" >> .env
           echo "DB_PASSWORD=postgres" >> .env
           echo "DB_NAME=catcare_db" >> .env
+          cp .env src/.env
 
       - name: Instalar dependências
         run: npm install
