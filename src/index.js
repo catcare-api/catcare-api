@@ -16,7 +16,11 @@ app.use(express.static('docker'));
 
 //servir a página inicial na rota raiz
 app.get('/', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '..', 'docker', 'index.html'));
+  try {
+    res.sendFile(require('path').join(__dirname, 'docker', 'index.html'));
+  } catch (err) {
+    res.status(200).send("CatCare API Online");
+  }
 });
 
 app.use("/tutors", tutorRoutes);
