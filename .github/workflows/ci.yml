@@ -44,7 +44,7 @@ jobs:
           cp .env src/.env
 
       - name: Instalar dependências
-        run: npm install
+        run: npm install | npm install dotenv
 
       - name: Definir ambiente de teste
         run: echo "NODE_ENV=test" >> $GITHUB_ENV
